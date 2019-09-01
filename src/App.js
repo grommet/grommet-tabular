@@ -7,6 +7,9 @@ import {
 import {
   Add, Checkmark, Close, Down, Next, Previous, Unlink, Up,
 } from 'grommet-icons'
+import {
+  bareConfig, addPath, removePath, raisePath, lowerPath, setPathSearch, setValues,
+} from './config'
 
 // const url = 'https://api.spacexdata.com/v3/launches?order=desc';
 // const primaryKey = 'flight_number';
@@ -79,12 +82,12 @@ const buildProps = (data, pathPrefix = []) => {
 }
 
 const App = () => {
-  const [apiUrl, setApiUrl] = React.useState()
-  const [primaryKey, setPrimaryKey] = React.useState()
+  // config e.g. { url: '', primaryKey: '', paths: { path: '', values: [], search: '' }}
+  const [config, setConfig] = React.useState()
+  const [recents, setRecents] = React.useState([])
   const [fullData, setFullData] = React.useState([])
   const [data, setData] = React.useState([])
   const [dataProps, setDataProps] = React.useState([])
-  const [config, setConfig] = React.useState([])
   const [columns, setColumns] = React.useState([])
   const [edit, setEdit] = React.useState(true)
   const [datum, setDatum] = React.useState()
@@ -92,33 +95,46 @@ const App = () => {
 
   // load from local storage
   React.useEffect(() => {
-    let stored = localStorage.getItem('config')
+    let stored = localStorage.getItem('dataSources')
     if (stored) {
-      setConfig(JSON.parse(stored))
-    }
-    stored = localStorage.getItem('apiUrl')
-    if (stored) {
-      setApiUrl(stored)
+      const nextRecents = JSON.parse(stored)
+      setRecents(nextRecents)
+      stored = nextRecents[0] && localStorage.getItem(nextRecents[0])
+      if (stored) {
+        setConfig(JSON.parse(stored))
+      } else {
+        setConfig(bareConfig)
+      }
+    } else {
+      setConfig(bareConfig)
     }
   }, [])
 
-  // save apiUrl to local storage when it changes
-  React.useEffect(() => localStorage.setItem('apiUrl', apiUrl), [apiUrl])
+  // save config to local storage when it changes
+  React.useEffect(() => {
+    if (config && config.url) {
+      localStorage.setItem(config.url, JSON.stringify(config))
+    }
+  }, [config])
+
+  // save recents to local storage when it changes
+  React.useEffect(() => {
+    localStorage.setItem('dataSources', JSON.stringify(recents))
+  }, [recents])
 
   // set columns when config or dataProps change 
   React.useEffect(() => {
-    if (config.length > 0 && dataProps.length > 0) {
-      localStorage.setItem('config', JSON.stringify(config))
-      const nextColumns = config
-        .map((path) => dataProps.find(p => p.property === path))
+    if (config && config.paths.length > 0 && dataProps.length > 0) {
+      const nextColumns = config.paths
+        .map(({ path }) => dataProps.find(p => p.property === path))
       setColumns(nextColumns)
     }
   }, [config, dataProps])
 
   // load api data
   React.useEffect(() => {
-    if (apiUrl) {
-      fetch(apiUrl)
+    if (config && config.url) {
+      fetch(config.url)
       .then(response => response.json())
       .then(nextFullData => {
         const nextDataProps = buildProps(nextFullData)
@@ -127,37 +143,47 @@ const App = () => {
         setData(nextFullData)
       })
     }
-  }, [apiUrl])
+  }, [config])
 
   React.useEffect(() => {
-    const nextData = fullData.filter((datum) =>
-      // check if any property has a filter that doesn't match
-      !dataProps.some(dataProp => {
-        if (dataProp.searchText) {
-          const value = datumValue(datum, dataProp.property)
-          return !(new RegExp(dataProp.searchText, 'i').test(value))
-        }
-        if (dataProp.values && dataProp.values.length > 0) {
-          const value = datumValue(datum, dataProp.property)
-          return !dataProp.values.some(v => v === value)
-        }
-        return false
-      })
-    )
-    setData(nextData)
-  }, [fullData, dataProps])
+    if (config) {
+      const nextData = fullData.filter((datum) =>
+        // check if any property has a filter that doesn't match
+        !config.paths.some(({ path, search, values }) => {
+          if (search) {
+            const value = datumValue(datum, path)
+            return !(new RegExp(search, 'i').test(value))
+          }
+          if (values && values.length > 0) {
+            const value = datumValue(datum, path)
+            return !values.some(v => v === value)
+          }
+          return false
+        })
+      )
+      setData(nextData)
+    }
+  }, [fullData, dataProps, config])
 
   const searchExp = search ? new RegExp(search, 'i') : undefined
 
   return (
     <Grommet full theme={grommet}>
-      {!apiUrl ? (
+      {!config ? (<Unlink />)
+      : (!config.url ? (
         <Box>
           <Form
-            value={{ apiUrl }}
-            onSubmit={({ value: { apiUrl }}) => setApiUrl(apiUrl)}
+            value={bareConfig}
+            onSubmit={({ value: nextConfig }) => {
+              const index = recents.indexOf(nextConfig.api)
+              let nextRecents = [...recents]
+              if (index !== -1) nextRecents.splice(index, 1)
+              nextRecents.unshift(nextConfig.url)
+              setRecents(nextRecents)
+              setConfig(nextConfig)
+            }}
           >
-            <FormField label="URL" name="apiUrl" />
+            <FormField label="URL" name="url" />
           </Form>
         </Box>
       ) : (
@@ -174,9 +200,9 @@ const App = () => {
               <Button
                 icon={<Unlink />}
                 hoverIndicator
-                onClick={() => setApiUrl(undefined)}
+                onClick={() => setConfig(undefined)}
               />
-              <Text>{apiUrl}</Text>
+              <Text>{config.url}</Text>
               <Button
                 icon={edit ? <Next /> : <Previous />}
                 hoverIndicator
@@ -187,7 +213,7 @@ const App = () => {
             <Box flex={true} overflow="auto">
               <DataTable
                 columns={columns}
-                primaryKey={primaryKey}
+                primaryKey={config.primaryKey}
                 data={data}
                 onClickRow={({ datum }) => setDatum(datum)}
               />
@@ -220,12 +246,12 @@ const App = () => {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                 />
-                {config
+                {config.paths
                 // omit object properties which aren't columns
-                .filter(path =>
+                .filter(({ path }) =>
                   !dataProps.some(p => p.property === path && p.dataProps))
-                .filter(path => !search || searchExp.test(path))
-                .map(path => {
+                .filter(({ path }) => !search || searchExp.test(path))
+                .map(({ path, search, values }) => {
                   const dataProp = dataProps.find(p => p.property === path)
                   return (
                     <Box
@@ -240,35 +266,29 @@ const App = () => {
                       <Box flex={false} direction="row" align="center">
                         <RadioButton
                           name="primaryKey"
-                          checked={primaryKey === path}
-                          onChange={() => setPrimaryKey(path)}
+                          checked={config.primaryKey === path}
+                          onChange={() => {
+                            const nextConfig = JSON.parse(JSON.stringify(config))
+                            nextConfig.primaryKey = path
+                            setConfig(nextConfig)
+                          }}
                         />
                         <Box flex={false} width="small">
                           {dataProp.options ? (
                             <Select
                               multiple
                               options={dataProp.options}
-                              value={dataProp.values || []}
-                              onChange={(event) => {
-                                const nextDataProps =
-                                  JSON.parse(JSON.stringify(dataProps))
-                                nextDataProps.find(p => p.property === path)
-                                  .values = event.value
-                                setDataProps(nextDataProps)
-                              }}
+                              value={values || []}
+                              onChange={(event) =>
+                                setConfig(setValues(config, path, event.value))}
                               style={{ width: '100%' }}
                             />
                           ) : (
                             <TextInput
                               placeholder="search"
-                              value={dataProp.searchText || ''}
-                              onChange={(event) => {
-                                const nextDataProps =
-                                  JSON.parse(JSON.stringify(dataProps))
-                                nextDataProps.find(p => p.property === path)
-                                  .searchText = event.target.value
-                                setDataProps(nextDataProps)
-                              }}
+                              value={search || ''}
+                              onChange={(event) =>
+                                setConfig(setPathSearch(config, path, event.target.value))}
                               style={{ width: '100%' }}
                             />
                           )}
@@ -277,31 +297,20 @@ const App = () => {
                           <Button
                             icon={<Up />}
                             hoverIndicator
-                            disabled={!config.indexOf(path)}
-                            onClick={() => {
-                              const index = config.indexOf(path)
-                              const nextConfig = [...config]
-                              nextConfig[index] = nextConfig[index - 1]
-                              nextConfig[index - 1] = path
-                              setConfig(nextConfig)
-                            }}
+                            disabled={!config.paths.findIndex(p => p.path === path)}
+                            onClick={() => setConfig(raisePath(config, path))}
                           />
                           <Button
                             icon={<Down />}
                             hoverIndicator
-                            disabled={config.indexOf(path) >= config.length - 1}
-                            onClick={() => {
-                              const index = config.indexOf(path)
-                              const nextConfig = [...config]
-                              nextConfig[index] = nextConfig[index + 1]
-                              nextConfig[index + 1] = path
-                              setConfig(nextConfig)
-                            }}
+                            disabled={config.paths
+                              .findIndex(p => p.path === path) >= config.paths.length - 1}
+                            onClick={() => setConfig(lowerPath(config, path))}
                           />
                           <Button
                             icon={<Close />}
                             hoverIndicator
-                            onClick={() => setConfig(config.filter(c => c !== path))}
+                            onClick={() => setConfig(removePath(config, path))}
                           />
                         </Box>
                       </Box>
@@ -312,7 +321,7 @@ const App = () => {
                 <Box margin={{ top: 'small' }} border="top" pad={{ top: 'small' }}>
                   {dataProps
                   .filter(p =>
-                    !config.some(path => (path === p.property && !p.dataProps)))
+                    !config.paths.some(({ path }) => (path === p.property && !p.dataProps)))
                   .filter(p => !search || searchExp.test(p.property))
                   .map(property => (
                     <Box key={property.property}>
@@ -329,7 +338,8 @@ const App = () => {
                           <Button
                             icon={<Add />}
                             hoverIndicator
-                            onClick={() => setConfig([...config, property.property])}
+                            onClick={() =>
+                              setConfig(addPath(config, property.property))}
                           />
                         </Box>
                       </Box>
@@ -340,7 +350,7 @@ const App = () => {
             </Box>
           )}
         </Box>
-      )}
+      ))}
     </Grommet>
   );
 }
