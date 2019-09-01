@@ -1,6 +1,6 @@
 import React from 'react'
 import {
-  Box, Button, DataTable, Form, FormField, Grommet, Layer,
+  Box, Button, DataTable, Form, FormField, Grommet, Image, Layer,
   RadioButton, Select, Text, TextArea, TextInput,
   grommet,
 } from 'grommet'
@@ -24,10 +24,15 @@ const datumValue = (datum, property) => {
 
 const buildProps = (data, pathPrefix = []) => {
   let result = []
-  const obj = pathPrefix.length ? datumValue(data[0], pathPrefix.join('.')) : data[0]
+  const firstObj = pathPrefix.length
+    ? datumValue(data[0], pathPrefix.join('.')) : data[0]
+  const lastObj = pathPrefix.length
+    ? datumValue(data[data.length-1], pathPrefix.join('.')) : data[data.length-1]
+  const obj = firstObj || lastObj;
   Object.keys(obj).forEach((key) => {
     const path = [...pathPrefix, key].join('.')
-    if (typeof obj[key] === 'string') {
+    const value = (firstObj && firstObj[key]) || lastObj[key]
+    if (typeof value === 'string') {
       // build options
       const options = {}
       data.forEach(datum => {
@@ -38,28 +43,35 @@ const buildProps = (data, pathPrefix = []) => {
         property: path,
         align: 'start',
         header: path,
-        example: obj[key],
+        example: value,
         options: Object.keys(options).length < 10
           ? Object.keys(options) : undefined,
+        render: (value && value.endsWith('.png'))
+          ? value => (
+            <Box height="xxsmall" width="xxsmall">
+              <Image fit="contain" src={datumValue(value, path)} />
+            </Box>
+          ) : undefined,
       })
-    } else if (typeof obj[key] === 'number') {
+    } else if (typeof value === 'number') {
       result.push({
         property: path,
         align: 'end',
         header: path,
-        example: obj[key],
+        example: value,
       })
-    } else if (typeof obj[key] === 'boolean') {
+    } else if (typeof value === 'boolean') {
       result.push({
         property: path,
         align: 'center',
         header: path,
+        example: value,
         render: value => (datumValue(value, path) ? <Checkmark /> : null),
         options: [true, false],
       })
-    } else if (Array.isArray(obj[key])) {
+    } else if (Array.isArray(value)) {
       // TODO
-    } else if (obj[key] && typeof obj[key] === 'object') {
+    } else if (value && typeof value === 'object') {
       result = result.concat(buildProps(data, path.split('.')))
     }
   })
@@ -149,8 +161,8 @@ const App = () => {
           </Form>
         </Box>
       ) : (
-        <Box direction="row">
-          <Box flex="grow" align="center">
+        <Box fill direction="row">
+          <Box flex={true} align="center">
             <Box
               alignSelf="stretch"
               flex={false}
@@ -172,7 +184,7 @@ const App = () => {
               />
             </Box>
 
-            <Box flex={false}>
+            <Box flex={true} overflow="auto">
               <DataTable
                 columns={columns}
                 primaryKey={primaryKey}
@@ -199,6 +211,7 @@ const App = () => {
               <TextArea fill value={JSON.stringify(datum, null, 4)} />
             </Layer>
           )}
+
           {edit && dataProps.length > 0 && (
             <Box flex={false} overflow="auto" background="dark-1" pad="small">
               <Box flex={false}>
