@@ -1,7 +1,7 @@
 import React from 'react'
 import {
-  Box, Button, DataTable, Form, FormField, Grommet, Image, Layer,
-  RadioButton, Select, Text, TextArea, TextInput,
+  Box, Button, DataTable, Form, FormField, Heading, Grommet, Image, Layer,
+  Paragraph, RadioButton, Select, Text, TextArea, TextInput,
   grommet,
 } from 'grommet'
 import {
@@ -11,7 +11,7 @@ import {
   bareConfig, addPath, removePath, raisePath, lowerPath, setPathSearch, setValues,
 } from './config'
 
-// const url = 'https://api.spacexdata.com/v3/launches?order=desc';
+// const url = 'https://api.spacexdata.com/v3/launches/past?order=desc';
 // const primaryKey = 'flight_number';
 
 const datumValue = (datum, property) => {
@@ -170,9 +170,19 @@ const App = () => {
 
   return (
     <Grommet full theme={grommet}>
-      {!config ? (<Unlink />)
+      {!config ? (
+        <Box fill align="center" justify="center">
+          <Box animation="pulse">
+            <Unlink size="large" />
+          </Box>
+        </Box>
+      )
       : (!config.url ? (
-        <Box>
+        <Box pad="xlarge">
+          <Heading>data explorer</Heading>
+          <Paragraph>
+            Enter the URL of a JSON REST API endpoint and see what it has to offer
+          </Paragraph>
           <Form
             value={bareConfig}
             onSubmit={({ value: nextConfig }) => {
@@ -184,8 +194,32 @@ const App = () => {
               setConfig(nextConfig)
             }}
           >
-            <FormField label="URL" name="url" />
+            <Box direction="row" align="center" gap="medium">
+              <Box flex>
+                <FormField label="URL" name="url" required />
+              </Box>
+              <Button type="submit" icon={<Next />} hoverIndicator />
+            </Box>
           </Form>
+          {recents.length > 0 && (
+            <Heading level={2} size="small">Recent</Heading>
+          )}
+          {recents.filter(r => r).map((recent, index) => (
+            <Button
+              hoverIndicator
+              onClick={() => {
+                let nextRecents = recents.filter(r => r && r !== recent)
+                nextRecents.unshift(recent)
+                setRecents(nextRecents)
+                const stored = localStorage.getItem(recent)
+                if (stored) setConfig(JSON.parse(stored))
+              }}
+            >
+              <Box pad={{ horizontal: 'medium', vertical: 'small' }}>
+                <Text>{recent}</Text>
+              </Box>
+            </Button>
+          ))}
         </Box>
       ) : (
         <Box fill direction="row">
@@ -201,7 +235,11 @@ const App = () => {
               <Button
                 icon={<Unlink />}
                 hoverIndicator
-                onClick={() => setConfig(bareConfig)}
+                onClick={() => {
+                  const nextRecents = ['', ...recents]
+                  setRecents(nextRecents)
+                  setConfig(bareConfig)
+                }}
               />
               <Text>{config.url}</Text>
               <Button
