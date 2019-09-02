@@ -11,8 +11,9 @@ import {
   bareConfig, addPath, removePath, raisePath, lowerPath, setPathSearch, setValues,
 } from './config'
 
-// const url = 'https://api.spacexdata.com/v3/launches/past?order=desc';
-// const primaryKey = 'flight_number';
+const examples = [
+  'https://api.spacexdata.com/v3/launches/past?order=desc'
+]
 
 const datumValue = (datum, property) => {
   const parts = property.split('.');
@@ -181,7 +182,7 @@ const App = () => {
         <Box pad="xlarge">
           <Heading>data explorer</Heading>
           <Paragraph>
-            Enter the URL of a JSON REST API endpoint and see what it has to offer
+            Provide the URL of a JSON endpoint and see what it has to offer
           </Paragraph>
           <Form
             value={bareConfig}
@@ -196,7 +197,7 @@ const App = () => {
           >
             <Box direction="row" align="center" gap="medium">
               <Box flex>
-                <FormField label="URL" name="url" required />
+                <FormField name="url" required placeholder="https://" />
               </Box>
               <Button type="submit" icon={<Next />} hoverIndicator />
             </Box>
@@ -204,7 +205,7 @@ const App = () => {
           {recents.length > 0 && (
             <Heading level={2} size="small">Recent</Heading>
           )}
-          {recents.filter(r => r).map((recent, index) => (
+          {recents.filter(r => r).map(recent => (
             <Button
               hoverIndicator
               onClick={() => {
@@ -217,6 +218,22 @@ const App = () => {
             >
               <Box pad={{ horizontal: 'medium', vertical: 'small' }}>
                 <Text>{recent}</Text>
+              </Box>
+            </Button>
+          ))}
+          {examples.length > 0 && (
+            <Heading level={2} size="small">Examples</Heading>
+          )}
+          {examples.map(example => (
+            <Button
+              hoverIndicator
+              onClick={() => {
+                const nextConfig = { ...bareConfig, url: example }
+                setConfig(nextConfig)
+              }}
+            >
+              <Box pad={{ horizontal: 'medium', vertical: 'small' }}>
+                <Text>{example}</Text>
               </Box>
             </Button>
           ))}
