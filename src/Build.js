@@ -1,9 +1,7 @@
 import React from 'react'
-import { Box, Button,  RadioButton, Select, Text, TextInput } from 'grommet'
+import { Box, Button,  RadioButton, Text, TextInput } from 'grommet'
 import { Add, Close, Down, Up, } from 'grommet-icons'
-import {
-  addPath, removePath, raisePath, lowerPath, setPathSearch, setValues,
-} from './config'
+import { addPath, removePath, raisePath, lowerPath } from './config'
 
 const Build = ({ config, setConfig, dataProps }) => {
   const [search, setSearch] = React.useState('')
@@ -32,8 +30,7 @@ const Build = ({ config, setConfig, dataProps }) => {
         .filter(({ path }) =>
           !dataProps.some(p => p.property === path && p.dataProps))
         .filter(({ path }) => !search || searchExp.test(path))
-        .map(({ path, search, values }) => {
-          const dataProp = dataProps.find(p => p.property === path)
+        .map(({ path }) => {
           return (
             <Box
               key={path}
@@ -54,26 +51,6 @@ const Build = ({ config, setConfig, dataProps }) => {
                     setConfig(nextConfig)
                   }}
                 />
-                <Box flex={false} width="small">
-                  {dataProp.options ? (
-                    <Select
-                      multiple
-                      options={dataProp.options}
-                      value={values || []}
-                      onChange={(event) =>
-                        setConfig(setValues(config, path, event.value))}
-                      style={{ width: '100%' }}
-                    />
-                  ) : (
-                    <TextInput
-                      placeholder="search"
-                      value={search || ''}
-                      onChange={(event) =>
-                        setConfig(setPathSearch(config, path, event.target.value))}
-                      style={{ width: '100%' }}
-                    />
-                  )}
-                </Box>
                 <Box flex={false} direction="row">
                   <Button
                     icon={<Up />}

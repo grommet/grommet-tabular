@@ -1,15 +1,15 @@
 import React from 'react'
 import {
-  Box, Button, DataTable, Grommet, Layer,
-  Paragraph, Text, TextArea,
-  grommet,
+  Box, Button, DataTable, Grommet, Paragraph, Text, TextInput, grommet,
 } from 'grommet'
-import { Close, Next, Previous, Unlink } from 'grommet-icons'
+import { Next, Previous, Unlink } from 'grommet-icons'
 import { bareConfig } from './config'
 import { datumValue, buildProps } from './data'
 import Loading from './Loading'
 import Start from './Start'
 import Build from './Build'
+import Filter from './Filter'
+import Detail from './Detail'
 
 const App = () => {
   // config e.g. { url: '', primaryKey: '', paths: { path: '', values: [], search: '' }}
@@ -20,6 +20,7 @@ const App = () => {
   const [columns, setColumns] = React.useState([])
   const [edit, setEdit] = React.useState(true)
   const [datum, setDatum] = React.useState()
+  const [search, setSearch] = React.useState('')
 
   // load first data source from local storage
   React.useEffect(() => {
@@ -67,8 +68,11 @@ const App = () => {
     }
   }, [config])
 
+  // set data when props, config, or search change
   React.useEffect(() => {
     if (config) {
+      const searchExp = search ? new RegExp(search, 'i') : undefined
+
       const nextData = fullData.filter((datum) =>
         // check if any property has a filter that doesn't match
         !config.paths.some(({ path, search, values }) => {
@@ -82,10 +86,15 @@ const App = () => {
           }
           return false
         })
+        // or if there is a search but no values match
+        && (!searchExp || config.paths.some(({ path }) => {
+          const value = datumValue(datum, path)
+          return searchExp.test(value)
+        }))
       )
       setData(nextData)
     }
-  }, [fullData, dataProps, config])
+  }, [fullData, dataProps, config, search])
 
   return (
     <Grommet full theme={grommet}>
@@ -93,7 +102,7 @@ const App = () => {
       : (!config.url ? <Start setConfig={setConfig} />
       : (
         <Box fill direction="row">
-          <Box flex={true} align="center">
+          <Box flex={true} align="center" gap="medium">
             <Box
               alignSelf="stretch"
               flex={false}
@@ -116,42 +125,36 @@ const App = () => {
               />
             </Box>
 
-            <Box flex={true} overflow="auto">
-              {columns.length === 0 && (
-                <Box pad="xlarge" align="center" justify="center">
-                  <Paragraph textAlign="center" size="large">
-                    Add some columns to build a table
-                  </Paragraph>
+            {data.length === 0 ? <Loading /> : (
+              <Box flex={true} overflow="auto" gap="medium">
+                {columns.length === 0 && (
+                  <Box pad="xlarge" align="center" justify="center">
+                    <Paragraph textAlign="center" size="large">
+                      Add some columns to build a table
+                    </Paragraph>
+                  </Box>
+                )}
+                <Box flex={false} direction="row" gap="small">
+                  <TextInput
+                    placeholder="Search ..."
+                    value={search}
+                    onChange={event => setSearch(event.target.value)}
+                  />
+                  <Filter config={config} setConfig={setConfig} dataProps={dataProps} />
                 </Box>
-              )}
-              <Box>
-                <DataTable
-                  columns={columns}
-                  primaryKey={config.primaryKey}
-                  data={data}
-                  onClickRow={({ datum }) => setDatum(datum)}
-                />
+                <Box>
+                  <DataTable
+                    columns={columns}
+                    primaryKey={config.primaryKey}
+                    data={data}
+                    onClickRow={({ datum }) => setDatum(datum)}
+                  />
+                </Box>
               </Box>
-            </Box>
+            )}
           </Box>
 
-          {datum && (
-            <Layer
-              full
-              margin="large"
-              onEsc={() => setDatum(undefined)}
-              onClickOutside={() => setDatum(undefined)}
-            >
-              <Box flex={false} direction="row" justify="end">
-                <Button
-                  icon={<Close />}
-                  hoverIndicator
-                  onClick={() => setDatum(undefined)}
-                />
-              </Box>
-              <TextArea fill value={JSON.stringify(datum, null, 4)} />
-            </Layer>
-          )}
+          {datum && <Detail datum={datum} setDatum={setDatum} />}
 
           {edit && dataProps.length > 0 && (
             <Build config={config} setConfig={setConfig} dataProps={dataProps} />
