@@ -42,14 +42,15 @@ const buildProps = (data, pathPrefix = []) => {
         const value = datumValue(datum, path)
         options[value] = true
       })
+      const isImage = (value && value.endsWith('.png'))
       result.push({
         property: path,
-        align: 'start',
+        align: isImage ? 'center' : 'start',
         header: path,
         example: value,
         options: Object.keys(options).length < 10
           ? Object.keys(options) : undefined,
-        render: (value && value.endsWith('.png'))
+        render: isImage
           ? value => (
             <Box height="xxsmall" width="xxsmall">
               <Image fit="contain" src={datumValue(value, path)} />
@@ -200,7 +201,7 @@ const App = () => {
               <Button
                 icon={<Unlink />}
                 hoverIndicator
-                onClick={() => setConfig(undefined)}
+                onClick={() => setConfig(bareConfig)}
               />
               <Text>{config.url}</Text>
               <Button
