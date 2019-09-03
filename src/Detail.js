@@ -16,8 +16,8 @@ const Detail = ({ datum, setDatum }) => (
         onClick={() => setDatum(undefined)}
       />
     </Box>
-    <TextArea fill value={JSON.stringify(datum, null, 4)} />
+    <TextArea fill defaultValue={JSON.stringify(datum, null, 4)} />
   </Layer>
 )
 
-export default Detail;
+export default Detail

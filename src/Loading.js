@@ -10,4 +10,4 @@ const Loading = () => (
   </Box>
 )
 
-export default Loading;
+export default Loading

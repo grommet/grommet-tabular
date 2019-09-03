@@ -3,14 +3,14 @@ import { Box, Image } from 'grommet'
 import { Checkmark } from 'grommet-icons'
 
 export const datumValue = (datum, property) => {
-  const parts = property.split('.');
+  const parts = property.split('.')
   if (parts.length === 1) {
-    return datum[property];
+    return datum[property]
   }
   if (!datum[parts[0]]) {
-    return undefined;
+    return undefined
   }
-  return datumValue(datum[parts[0]], parts.slice(1).join('.'));
+  return datumValue(datum[parts[0]], parts.slice(1).join('.'))
 }
 
 export const buildProps = (data, pathPrefix = []) => {
@@ -19,7 +19,7 @@ export const buildProps = (data, pathPrefix = []) => {
     ? datumValue(data[0], pathPrefix.join('.')) : data[0]
   const lastObj = pathPrefix.length
     ? datumValue(data[data.length-1], pathPrefix.join('.')) : data[data.length-1]
-  const obj = firstObj || lastObj;
+  const obj = firstObj || lastObj
   Object.keys(obj).forEach((key) => {
     const path = [...pathPrefix, key].join('.')
     const value = (firstObj && firstObj[key]) || lastObj[key]

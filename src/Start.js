@@ -81,7 +81,7 @@ const Start = ({ setConfig }) => {
         </Button>
       ))}
     </Box>
-  );
+  )
 }
 
-export default Start;
+export default Start

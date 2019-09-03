@@ -1,26 +1,33 @@
 import React from 'react'
 import {
-  Box, Button, DataTable, Grommet, Paragraph, Text, TextInput, grommet,
+  Anchor, Box, Button, DataTable, Grommet, Paragraph, Text, TextInput, grommet,
 } from 'grommet'
 import { Next, Previous, Unlink } from 'grommet-icons'
-import { bareConfig } from './config'
+import { bareConfig, clearFilters } from './config'
 import { datumValue, buildProps } from './data'
 import Loading from './Loading'
 import Start from './Start'
 import Build from './Build'
 import Filter from './Filter'
 import Detail from './Detail'
+import Aggregate from './Aggregate'
+
+const selectedRowStyle = { background: 'brand' }
 
 const App = () => {
   // config e.g. { url: '', primaryKey: '', paths: { path: '', values: [], search: '' }}
   const [config, setConfig] = React.useState()
-  const [fullData, setFullData] = React.useState([])
+  const [fullData, setFullData] = React.useState()
   const [data, setData] = React.useState([])
   const [dataProps, setDataProps] = React.useState([])
   const [columns, setColumns] = React.useState([])
-  const [edit, setEdit] = React.useState(true)
+  const [edit, setEdit] = React.useState(false)
   const [datum, setDatum] = React.useState()
   const [search, setSearch] = React.useState('')
+  const [select, setSelect] = React.useState(false)
+  const [selected, setSelected] = React.useState({})
+  const [filterSelected, setFilterSelected] = React.useState(false)
+  const [aggregate, setAggregate] = React.useState(false)
 
   // load first data source from local storage
   React.useEffect(() => {
@@ -70,12 +77,15 @@ const App = () => {
 
   // set data when props, config, or search change
   React.useEffect(() => {
-    if (config) {
+    if (config && fullData) {
       const searchExp = search ? new RegExp(search, 'i') : undefined
 
       const nextData = fullData.filter((datum) =>
+        // if filtering on selected, ignore other filtering
+        (filterSelected && selected[datumValue(datum, config.primaryKey)])
+        || (!filterSelected
         // check if any property has a filter that doesn't match
-        !config.paths.some(({ path, search, values }) => {
+        && !config.paths.some(({ path, search, values }) => {
           if (search) {
             const value = datumValue(datum, path)
             return !(new RegExp(search, 'i').test(value))
@@ -90,11 +100,11 @@ const App = () => {
         && (!searchExp || config.paths.some(({ path }) => {
           const value = datumValue(datum, path)
           return searchExp.test(value)
-        }))
+        })))
       )
       setData(nextData)
     }
-  }, [fullData, dataProps, config, search])
+  }, [config, dataProps, filterSelected, fullData, search, selected])
 
   return (
     <Grommet full theme={grommet}>
@@ -103,6 +113,8 @@ const App = () => {
       : (
         <Box fill direction="row">
           <Box flex={true} align="center" gap="medium">
+
+            {/* app header */}
             <Box
               alignSelf="stretch"
               flex={false}
@@ -125,8 +137,9 @@ const App = () => {
               />
             </Box>
 
-            {data.length === 0 ? <Loading /> : (
-              <Box flex={true} overflow="auto" gap="medium">
+            {!fullData ? <Loading /> : (
+              <Box flex={true} gap="medium" pad="xsmall">
+
                 {columns.length === 0 && (
                   <Box pad="xlarge" align="center" justify="center">
                     <Paragraph textAlign="center" size="large">
@@ -134,22 +147,111 @@ const App = () => {
                     </Paragraph>
                   </Box>
                 )}
-                <Box flex={false} direction="row" gap="small">
+
+                {/* data header */}
+                <Box flex={false} direction="row" align="center" gap="small">
                   <TextInput
                     placeholder="Search ..."
                     value={search}
                     onChange={event => setSearch(event.target.value)}
                   />
                   <Filter config={config} setConfig={setConfig} dataProps={dataProps} />
+                  <Box basis="xsmall" flex={false} align="end">
+                    <Anchor
+                      margin="small"
+                      label={select ? 'done' : 'select'}
+                      onClick={() => {
+                        setFilterSelected(false)
+                        setSelected({})
+                        setSelect(!select)
+                      }}
+                    />
+                  </Box>
                 </Box>
-                <Box>
+                {select && (
+                  <Box
+                    flex={false}
+                    direction="row"
+                    align="center"
+                    justify="between"
+                    gap="medium"
+                  >
+                    <Box direction="row">
+                      <Anchor
+                        margin="small"
+                        label="select all"
+                        onClick={() => {
+                          const nextSelected = {}
+                          data.forEach(datum => {
+                            const value = datumValue(datum, config.primaryKey)
+                            nextSelected[value] = selectedRowStyle
+                          })
+                          setSelected(nextSelected)
+                        }}
+                      />
+                      {Object.keys(selected).length > 0 && (
+                        <Anchor
+                          margin="small"
+                          label="clear selection"
+                          onClick={() => {
+                            setSelected({})
+                            setFilterSelected(false)
+                          }}
+                        />
+                      )}
+                    </Box>
+                    <Box direction="row">
+                      <Anchor
+                        margin="small"
+                        label={`${Object.keys(selected).length} selected`}
+                        disabled={Object.keys(selected).length === 0}
+                        onClick={() => {
+                          setFilterSelected(true)
+                          setSearch('')
+                          setConfig(clearFilters(config))
+                        }}
+                      />
+                      <Button
+                        label="Aggregate"
+                        disabled={Object.keys(selected).length === 0}
+                        onClick={() => setAggregate(true)}
+                      />
+                    </Box>
+                    {aggregate && (
+                      <Aggregate
+                        config={config}
+                        data={data.filter(datum =>
+                          selected[datumValue(datum, config.primaryKey)])}
+                        dataProps={dataProps}
+                        onClose={() => setAggregate(false)}
+                      />
+                    )}
+                  </Box>
+                )}
+
+                <Box flex="shrink" overflow="auto">
                   <DataTable
                     columns={columns}
                     primaryKey={config.primaryKey}
                     data={data}
-                    onClickRow={({ datum }) => setDatum(datum)}
+                    rowProps={select ? selected : undefined}
+                    onClickRow={({ datum }) => {
+                      if (select) {
+                        const nextSelected = JSON.parse(JSON.stringify(selected))
+                        const value = datumValue(datum, config.primaryKey)
+                        if (nextSelected[value]) {
+                          delete nextSelected[value]
+                        } else {
+                          nextSelected[value] = selectedRowStyle
+                        }
+                        setSelected(nextSelected)
+                      } else {
+                        setDatum(datum)
+                      }
+                    }}
                   />
                 </Box>
+
               </Box>
             )}
           </Box>
@@ -162,7 +264,7 @@ const App = () => {
         </Box>
       ))}
     </Grommet>
-  );
+  )
 }
 
-export default App;
+export default App

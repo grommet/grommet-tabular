@@ -106,7 +106,7 @@ const Build = ({ config, setConfig, dataProps }) => {
         ))}
       </Box>
     </Box>
-  );
+  )
 }
 
-export default Build;
+export default Build

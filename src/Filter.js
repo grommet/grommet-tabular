@@ -51,7 +51,7 @@ const Filter = ({ config, setConfig, dataProps }) => {
         </Box>
       )}
     />
-  );
+  )
 }
 
-export default Filter;
+export default Filter

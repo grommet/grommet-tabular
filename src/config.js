@@ -41,3 +41,12 @@ export const setPathSearch = (config, path, search) => {
   nextConfig.paths.find(p => p.path === path).search = search
   return nextConfig
 }
+
+export const clearFilters = (config) => {
+  const nextConfig = JSON.parse(JSON.stringify(config))
+  nextConfig.paths.forEach(p => {
+    delete p.values
+    delete p.search
+  })
+  return nextConfig
+}
