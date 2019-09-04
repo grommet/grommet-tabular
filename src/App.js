@@ -24,7 +24,7 @@ const App = () => {
   const [edit, setEdit] = React.useState(false)
   const [datum, setDatum] = React.useState()
   const [search, setSearch] = React.useState('')
-  const [select, setSelect] = React.useState(true)
+  const [select, setSelect] = React.useState(false)
   const [selected, setSelected] = React.useState({})
   const [filterSelected, setFilterSelected] = React.useState(false)
   const [aggregate, setAggregate] = React.useState(false)
@@ -66,8 +66,18 @@ const App = () => {
     if (config && config.url) {
       fetch(config.url)
       .then(response => response.json())
-      .then(nextFullData => {
+      .then(responseData => {
+        let nextFullData;
+        if (Array.isArray(responseData)) nextFullData = responseData
+        else if (typeof responseData === 'object') {
+          // look for first array value
+          Object.keys(responseData).some((key) => {
+            if (Array.isArray(responseData[key])) nextFullData = responseData[key]
+            return nextFullData
+          })
+        }
         const nextDataProps = buildProps(nextFullData)
+        setColumns([])
         setDataProps(nextDataProps)
         setFullData(nextFullData)
         setData(nextFullData)

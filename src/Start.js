@@ -16,11 +16,6 @@ const Start = ({ setConfig }) => {
     if (stored) setRecents(JSON.parse(stored))
   }, [])
 
-  // save recents to local storage when it changes
-  React.useEffect(() => {
-    localStorage.setItem('dataSources', JSON.stringify(recents))
-  }, [recents])
-
   return (
     <Box pad="xlarge">
       <Heading>data explorer</Heading>
@@ -30,11 +25,11 @@ const Start = ({ setConfig }) => {
       <Form
         value={bareConfig}
         onSubmit={({ value: nextConfig }) => {
-          const index = recents.indexOf(nextConfig.api)
+          const index = recents.indexOf(nextConfig.url)
           let nextRecents = [...recents]
           if (index !== -1) nextRecents.splice(index, 1)
           nextRecents.unshift(nextConfig.url)
-          setRecents(nextRecents)
+          localStorage.setItem('dataSources', JSON.stringify(nextRecents))
           setConfig(nextConfig)
         }}
       >
@@ -50,11 +45,12 @@ const Start = ({ setConfig }) => {
       )}
       {recents.filter(r => r).map(recent => (
         <Button
+          key={recent}
           hoverIndicator
           onClick={() => {
             let nextRecents = recents.filter(r => r && r !== recent)
             nextRecents.unshift(recent)
-            setRecents(nextRecents)
+            localStorage.setItem('dataSources', JSON.stringify(nextRecents))
             const stored = localStorage.getItem(recent)
             if (stored) setConfig(JSON.parse(stored))
           }}
@@ -69,8 +65,12 @@ const Start = ({ setConfig }) => {
       )}
       {examples.map(example => (
         <Button
+          key={example}
           hoverIndicator
           onClick={() => {
+            let nextRecents = recents.filter(r => r && r !== example)
+            nextRecents.unshift(example)
+            localStorage.setItem('dataSources', JSON.stringify(nextRecents))
             const nextConfig = { ...bareConfig, url: example }
             setConfig(nextConfig)
           }}
