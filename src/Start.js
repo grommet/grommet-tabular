@@ -18,7 +18,7 @@ const Start = ({ setConfig }) => {
 
   return (
     <Box pad="xlarge">
-      <Heading>data explorer</Heading>
+      <Heading>tabular</Heading>
       <Paragraph>
         Provide the URL of a JSON endpoint and see what it has to offer
       </Paragraph>
