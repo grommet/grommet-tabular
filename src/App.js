@@ -24,7 +24,7 @@ const App = () => {
   const [edit, setEdit] = React.useState(false)
   const [datum, setDatum] = React.useState()
   const [search, setSearch] = React.useState('')
-  const [select, setSelect] = React.useState(false)
+  const [select, setSelect] = React.useState(true)
   const [selected, setSelected] = React.useState({})
   const [filterSelected, setFilterSelected] = React.useState(false)
   const [aggregate, setAggregate] = React.useState(false)
@@ -140,6 +140,7 @@ const App = () => {
             {!fullData ? <Loading /> : (
               <Box flex={true} gap="medium" pad="xsmall">
 
+                {/* when there are no columns yet */}
                 {columns.length === 0 && (
                   <Box pad="xlarge" align="center" justify="center">
                     <Paragraph textAlign="center" size="large">
@@ -168,6 +169,8 @@ const App = () => {
                     />
                   </Box>
                 </Box>
+
+                {/* select state */}
                 {select && (
                   <Box
                     flex={false}
@@ -175,6 +178,9 @@ const App = () => {
                     align="center"
                     justify="between"
                     gap="medium"
+                    background="light-2"
+                    round="small"
+                    pad="medium"
                   >
                     <Box direction="row">
                       <Anchor
@@ -229,6 +235,7 @@ const App = () => {
                   </Box>
                 )}
 
+                {/* table proper */}
                 <Box flex="shrink" overflow="auto">
                   <DataTable
                     columns={columns}

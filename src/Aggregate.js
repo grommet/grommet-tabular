@@ -45,6 +45,7 @@ const Aggregate = ({ config, data, dataProps, onClose }) => {
 
   return (
     <Layer
+      position="top"
       full="horizontal"
       margin="large"
       onEsc={onClose}
@@ -57,7 +58,7 @@ const Aggregate = ({ config, data, dataProps, onClose }) => {
         <Button icon={<Close />} hoverIndicator onClick={onClose} />
       </Box>
       <Box flex="shrink" overflow="auto">
-        <Grid columns="small" gap="large" margin="large">
+        <Grid columns={{ count: 'fit', size: 'small' }} gap="large" margin="large">
           {meters}
         </Grid>
       </Box>
