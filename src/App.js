@@ -16,7 +16,7 @@ const selectedRowStyle = { background: 'brand' }
 
 const App = () => {
   // config e.g. { url: '', primaryKey: '', paths: { path: '', values: [], search: '' }}
-  const [config, setConfig] = React.useState()
+  const [config, setConfig] = React.useState({})
   const [fullData, setFullData] = React.useState()
   const [data, setData] = React.useState([])
   const [dataProps, setDataProps] = React.useState([])
@@ -54,16 +54,16 @@ const App = () => {
 
   // set columns when config or dataProps change 
   React.useEffect(() => {
-    if (config && config.paths.length > 0 && dataProps.length > 0) {
+    if (dataProps.length > 0) {
       const nextColumns = config.paths
         .map(({ path }) => dataProps.find(p => p.property === path))
       setColumns(nextColumns)
     }
-  }, [config, dataProps])
+  }, [config.paths, dataProps])
 
   // load api data
   React.useEffect(() => {
-    if (config && config.url) {
+    if (config.url) {
       setDataProps([])
       setFullData(undefined)
       setColumns([])
@@ -86,7 +86,7 @@ const App = () => {
         setData(nextFullData)
       })
     }
-  }, [config])
+  }, [config.url])
 
   // set data when props, config, or search change
   React.useEffect(() => {
