@@ -154,34 +154,34 @@ const App = () => {
               <Box flex={true} gap="medium" pad="xsmall">
 
                 {/* when there are no columns yet */}
-                {columns.length === 0 && (
+                {columns.length === 0 ? (
                   <Box pad="xlarge" align="center" justify="center">
                     <Paragraph textAlign="center" size="large">
                       Add some columns to build a table
                     </Paragraph>
                   </Box>
-                )}
-
-                {/* data header */}
-                <Box flex={false} direction="row" align="center" gap="small">
-                  <TextInput
-                    placeholder="Search ..."
-                    value={search}
-                    onChange={event => setSearch(event.target.value)}
-                  />
-                  <Filter config={config} setConfig={setConfig} dataProps={dataProps} />
-                  <Box basis="xsmall" flex={false} align="end">
-                    <Anchor
-                      margin="small"
-                      label={select ? 'done' : 'select'}
-                      onClick={() => {
-                        setFilterSelected(false)
-                        setSelected({})
-                        setSelect(!select)
-                      }}
+                ) : (
+                  <Box flex={false} direction="row" align="center" gap="small">
+                    {/* data header */}
+                    <TextInput
+                      placeholder="Search ..."
+                      value={search}
+                      onChange={event => setSearch(event.target.value)}
                     />
+                    <Filter config={config} setConfig={setConfig} dataProps={dataProps} />
+                    <Box basis="xsmall" flex={false} align="end">
+                      <Anchor
+                        margin="small"
+                        label={select ? 'done' : 'select'}
+                        onClick={() => {
+                          setFilterSelected(false)
+                          setSelected({})
+                          setSelect(!select)
+                        }}
+                      />
+                    </Box>
                   </Box>
-                </Box>
+                )}
 
                 {/* select state */}
                 {select && (

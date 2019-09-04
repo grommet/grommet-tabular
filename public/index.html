@@ -2,19 +2,36 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico" />
+    <link rel="shortcut icon" href="%PUBLIC_URL%/shortcut-icon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
     <meta
       name="description"
-      content="Grommet data interaction"
+      content="Grommet tabular data"
     />
-    <link rel="apple-touch-icon" href="logo192.png" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <title>Grommet Data</title>
+    <title>Tabular</title>
+    <style type="text/css">
+      body { margin: 0; }
+      #loadingLogo {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        color: #7D4CDB; font-family: Helvetica, sans-serif;
+        display: flex; flex-direction: column; align-items: center;
+      }
+      #loadingLogo h1 {
+        font-weight: normal;
+      }
+    </style>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
+    <div id="root">
+      <div id="loadingLogo">
+        <svg width="96" height="96">
+          <circle cx="48" cy="48" r="42" stroke="#fff" stroke-width="12" fill="none" />
+        </svg>
+        <h1>tabular</h1>
+      </div>
+    </div>
   </body>
 </html>
