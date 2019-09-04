@@ -64,6 +64,10 @@ const App = () => {
   // load api data
   React.useEffect(() => {
     if (config && config.url) {
+      setDataProps([])
+      setFullData(undefined)
+      setColumns([])
+
       fetch(config.url)
       .then(response => response.json())
       .then(responseData => {
@@ -77,7 +81,6 @@ const App = () => {
           })
         }
         const nextDataProps = buildProps(nextFullData)
-        setColumns([])
         setDataProps(nextDataProps)
         setFullData(nextFullData)
         setData(nextFullData)
@@ -87,7 +90,7 @@ const App = () => {
 
   // set data when props, config, or search change
   React.useEffect(() => {
-    if (config && fullData) {
+    if (config && fullData && dataProps.length > 0) {
       const searchExp = search ? new RegExp(search, 'i') : undefined
 
       const nextData = fullData.filter((datum) =>
@@ -147,7 +150,7 @@ const App = () => {
               />
             </Box>
 
-            {!fullData ? <Loading /> : (
+            {(!fullData || dataProps.length === 0) ? <Loading /> : (
               <Box flex={true} gap="medium" pad="xsmall">
 
                 {/* when there are no columns yet */}
