@@ -2,7 +2,7 @@ import React from 'react'
 import {
   Anchor, Box, Button, DataTable, Grommet, Paragraph, Text, TextInput, grommet,
 } from 'grommet'
-import { Next, Previous, Unlink } from 'grommet-icons'
+import { Next, Previous, Share, Unlink } from 'grommet-icons'
 import { bareConfig, clearFilters } from './config'
 import { datumValue, buildProps } from './data'
 import Loading from './Loading'
@@ -14,6 +14,16 @@ import Aggregate from './Aggregate'
 
 const selectedRowStyle = { background: 'brand' }
 
+const getParams = () => {
+  const { location } = window;
+  const params = {};
+  location.search.slice(1).split('&').forEach(p => {
+    const [k, v] = p.split('=');
+    params[k] = decodeURIComponent(v);
+  });
+  return params;
+}
+
 const App = () => {
   // config e.g. { url: '', primaryKey: '', paths: { path: '', values: [], search: '' }}
   const [config, setConfig] = React.useState({})
@@ -21,7 +31,7 @@ const App = () => {
   const [data, setData] = React.useState([])
   const [dataProps, setDataProps] = React.useState([])
   const [columns, setColumns] = React.useState([])
-  const [edit, setEdit] = React.useState(false)
+  const [edit, setEdit] = React.useState(true)
   const [datum, setDatum] = React.useState()
   const [search, setSearch] = React.useState('')
   const [select, setSelect] = React.useState(false)
@@ -31,17 +41,23 @@ const App = () => {
 
   // load first data source from local storage
   React.useEffect(() => {
-    let stored = localStorage.getItem('dataSources')
-    if (stored) {
-      const dataSources = JSON.parse(stored)
-      stored = dataSources[0] && localStorage.getItem(dataSources[0])
+    // get config from location, if any
+    const params = getParams();
+    if (params.c) {
+      setConfig(JSON.parse(decodeURIComponent(params.c)))
+    } else {
+      let stored = localStorage.getItem('dataSources')
       if (stored) {
-        setConfig(JSON.parse(stored))
+        const dataSources = JSON.parse(stored)
+        stored = dataSources[0] && localStorage.getItem(dataSources[0])
+        if (stored) {
+          setConfig(JSON.parse(stored))
+        } else {
+          setConfig(bareConfig)
+        }
       } else {
         setConfig(bareConfig)
       }
-    } else {
-      setConfig(bareConfig)
     }
   }, [])
 
@@ -142,7 +158,20 @@ const App = () => {
                 hoverIndicator
                 onClick={() => setConfig(bareConfig)}
               />
-              <Text>{config.url}</Text>
+              <Box direction="row" align="center" gap="small">
+                <Text>{config.url}</Text>
+                {navigator.share && (
+                  <Button
+                    icon={<Share />}
+                    hoverIndicator
+                    onClick={() => navigator.share({
+                      title: 'tabular',
+                      text: 'tabular',
+                      url: `?c=${encodeURIComponent(JSON.stringify(config))}`,
+                    })}
+                  />
+                )}
+              </Box>
               <Button
                 icon={edit ? <Next /> : <Previous />}
                 hoverIndicator
