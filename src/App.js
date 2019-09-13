@@ -18,7 +18,7 @@ const getParams = () => {
   const { location } = window;
   const params = {};
   location.search.slice(1).split('&').forEach(p => {
-    const [k, v] = p.split('=');
+    const [k, v] = p.split(/=(.+)/);
     params[k] = decodeURIComponent(v);
   });
   return params;
@@ -44,7 +44,12 @@ const App = () => {
     // get config from location, if any
     const params = getParams();
     if (params.c) {
-      setConfig(JSON.parse(decodeURIComponent(params.c)))
+      try {
+        setConfig(JSON.parse(params.c))
+      } catch (e) {
+        console.error('!!!', e)
+        setConfig(bareConfig)
+      }
     } else {
       let stored = localStorage.getItem('dataSources')
       if (stored) {
@@ -168,7 +173,7 @@ const App = () => {
                       title: 'tabular',
                       text: 'tabular',
                       url: `?c=${encodeURIComponent(JSON.stringify(config))}`,
-                    })}
+                    }).catch(() => {})}
                   />
                 )}
               </Box>
